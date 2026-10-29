@@ -29,11 +29,18 @@ An 8 GB system may still be under pressure with a browser, editor and Docker ope
 
 ## Place the repository in Linux storage
 
-Clone your published repository into `~/projects/paperless-gcp-devops-platform`. Before publication, copy the delivered folder from Windows into `~/projects/` using WSL or extract the delivered ZIP there. Do not run the stack from `/mnt/c/...`; Linux storage gives better permissions and filesystem behavior.
+Clone the repository into the WSL Linux filesystem for Linux permissions and filesystem behavior:
 
 ```bash
 mkdir -p ~/projects
-cd ~/projects/paperless-gcp-devops-platform
+cd ~/projects
+git clone https://github.com/heyiamwahab236/paperless-gcp-devops-platform.git
+cd paperless-gcp-devops-platform
+```
+
+Initialize the stack from this directory rather than `/mnt/c/...`:
+
+```bash
 python3 scripts/init_local.py
 ```
 
@@ -41,4 +48,4 @@ The initializer records your Linux UID/GID, creates private credential files, an
 
 ## Avoid running both environments
 
-Before Minikube: `docker compose stop`. Before Compose: `minikube stop --profile=paperless-lab`. Disable Docker Desktop's separate built-in Kubernetes cluster if you do not need it. Keep credentials and runtime folders inside the ignored repository paths; never include them in portfolio screenshots.
+Before Minikube: `docker compose stop`. Before Compose: `minikube stop --profile=paperless-lab`. Disable Docker Desktop's separate built-in Kubernetes cluster if you do not need it. Keep credentials and runtime folders inside the ignored repository paths and exclude them from shared logs or screenshots.

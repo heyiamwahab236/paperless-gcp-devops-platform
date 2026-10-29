@@ -1,6 +1,6 @@
 # Source review — 29 October 2026
 
-Primary upstream references were reviewed while preparing this repository. Links to a pinned version describe the delivered application; moving documentation can change later. Image manifest digests were retrieved directly from GHCR/Docker Hub and recorded in `images.lock.json`.
+The references below were used to check deployment compatibility. Tagged sources correspond to the pinned application release; moving documentation can change. Image manifest digests were retrieved directly from GHCR/Docker Hub and recorded in `images.lock.json`.
 
 | Source | Used to verify |
 |---|---|

@@ -1,6 +1,6 @@
 # Verification record — 29 October 2026
 
-This records checks executed during repository preparation on Windows. It is **local validation evidence**, not a GitHub Actions run or a cloud deployment record. No Google Cloud resources or service-account keys were created.
+The checks below ran locally on Windows. Terraform used a mock provider; no Google Cloud resources or service-account keys were created.
 
 ## Completed checks
 
@@ -40,7 +40,7 @@ The module audit uses `terraform/audit.tfvars.example` with documentation-only i
 | actionlint | 1.7.7 |
 | Trivy | 0.76.1 |
 
-The validation-tool downloads were checked against official release checksums. Terraform reported a HashiCorp-signed provider. Local output is preserved in [validation-log.txt](validation-log.txt); environment-specific absolute paths were replaced with neutral labels. The CI environment differs and must still be run on GitHub.
+The validation-tool downloads were checked against official release checksums. Terraform reported a HashiCorp-signed provider. Local output is preserved in [validation-log.txt](validation-log.txt); environment-specific absolute paths were replaced with neutral labels. Hosted CI validation is still pending.
 
 ## Runtime checks not completed
 
@@ -51,8 +51,8 @@ Consequently:
 - Compose application startup and document ingestion: **NOT VERIFIED**.
 - Minikube deployment and pod persistence: **NOT RUN**.
 - Export/restore exercise: **NOT RUN**.
-- GitHub-hosted workflows: **NOT RUN**; repository publication is a separate user step.
+- GitHub-hosted validation: **BLOCKED BEFORE EXECUTION** in the [first run](https://github.com/heyiamwahab236/paperless-gcp-devops-platform/actions/runs/40931333478); no validation steps ran.
 - Live Google Cloud plan/apply: **INTENTIONALLY NOT RUN**.
 - Performance on an 8 GB laptop: **NOT MEASURED**. The memory settings are design budgets; this validation host had more RAM.
 
-Use the manual `Runtime demo` workflow or the [runbook](../runbook.md) to close these gaps. Do not mark them passed based on static checks. Check [image-scan-summary.md](image-scan-summary.md) for the separately recorded image-security outcome.
+Pending runtime checks can be executed through the manual `Runtime demo` workflow or the [runbook](../runbook.md). Image-security results are recorded separately in [image-scan-summary.md](image-scan-summary.md).

@@ -1,10 +1,10 @@
 apiVersion: v2
 name: paperless
-description: Original single-node operations lab for upstream Paperless-ngx
+description: Single-node deployment of Paperless-ngx with PostgreSQL and Valkey
 type: application
 version: 0.1.0
 appVersion: '3.3.4'
 home: https://github.com/paperless-ngx/paperless-ngx
 sources:
   - https://github.com/paperless-ngx/paperless-ngx
-keywords: [paperless-ngx, devops, portfolio, minikube]
+keywords: [paperless-ngx, devops, minikube]

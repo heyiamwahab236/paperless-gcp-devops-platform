@@ -14,9 +14,9 @@ Download [full reports and SBOMs](security-reports.zip), or inspect the [machine
 
 ## Triage decision
 
-Keep this as a synthetic, localhost-only lab. Do not market it as vulnerability-free, internet-ready or production-hardened. Prioritize the CRITICAL matches, review their upstream/vendor advisories and package reachability, then test patched upstream image digests when available. Do not patch application packages ad hoc inside an upstream container or silently hide findings to obtain a green badge. Re-run scans and runtime checks after changing images; keep any justified exception narrow, reviewed and dated.
+Access remains limited to localhost with synthetic documents while these findings are unresolved. Prioritize the CRITICAL matches, review upstream/vendor advisories and package reachability, then test patched upstream image digests when available. Update images through their upstream releases and re-run scans and runtime checks. Record the scope, reason, reviewer, and expiry date for any future exception.
 
-The delivered workflow does not ignore unfixed vulnerabilities and does not use blanket suppressions. Its current image gate is expected to fail for these digests until the findings are resolved or explicitly triaged through a future reviewed policy change. The separate configuration-validation workflow has different checks and can pass while the image gate fails.
+The image workflow includes unfixed vulnerabilities and has no blanket suppressions. Its gate is expected to fail for these digests until the findings are resolved or explicitly triaged through a reviewed policy change. The separate configuration-validation workflow has different checks and can pass while the image gate fails.
 
 ## Interpretation limits
 

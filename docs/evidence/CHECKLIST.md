@@ -1,8 +1,8 @@
-# Evidence checklist
+# Validation checklist
 
-Evidence is a record of completed work, not a list of implied accomplishments. Keep failures and limitations visible. Do not fill a checkbox until its linked artifact exists and you have reviewed it. The baseline verification record is [VALIDATION.md](VALIDATION.md).
+Track static checks, runtime tests, and recovery exercises here. Completed checks are documented in the dated [validation record](VALIDATION.md); runtime checks remain pending.
 
-## Delivered static evidence
+## Static validation
 
 - [x] Original Compose and Helm configuration with clear upstream attribution.
 - [x] Immutable image references checked against the public registries.
@@ -13,11 +13,10 @@ Evidence is a record of completed work, not a list of implied accomplishments. K
 - [x] GitHub Actions workflow syntax validation.
 - [x] Current-version Kubernetes/Terraform configuration audit; findings documented.
 - [x] Local image vulnerability scans and SBOMs for all three digests; findings retained, gate failed.
-- [x] No Google Cloud resources provisioned.
 
-The checkboxes above summarize the delivery's dated validation record; they are not GitHub run history. See the record for tool versions and exact limits.
+These results were collected locally. See the validation record for tool versions and scan findings.
 
-## Complete on the laptop or the manual hosted demo
+## Runtime and recovery
 
 - [ ] Compose: all three services healthy; retain sanitized `docker compose ps` output.
 - [ ] Compose: API smoke result with document ID, marker and original checksum check.
@@ -32,19 +31,16 @@ The checkboxes above summarize the delivery's dated validation record; they are 
 
 An API test using a born-digital PDF proves extraction, not OCR accuracy. Measurements on a larger machine do not prove the 8 GB profile's performance.
 
-## GitHub proof after publication
+## GitHub Actions
 
-- [ ] Publish the repository with attribution and license files intact.
-- [ ] Link a completed green `Validate` run for the current commit.
+- [ ] Complete `Validate` for the current commit and record its run URL.
 - [ ] Run `Runtime demo` once for `compose` and once for `minikube`; retain real artifacts.
 - [ ] Run `Image security`; record the date, image digests, findings and remediation decisions.
 - [ ] Retain configuration-audit findings and explain lab exceptions.
-- [ ] Add branch protection/rules requiring validation if appropriate to your GitHub plan.
-- [ ] Replace the publishing guide's example owner with the actual owner wherever you add badges/links.
 
-GitHub workflow artifacts expire. Before expiry, save reviewed, sanitized copies into this directory with the run URL and commit SHA. Screenshots of a green icon without a run link or commit are weak evidence.
+GitHub workflow artifacts expire. Save reviewed, sanitized results into this directory with the run URL and commit SHA when a longer retention period is needed.
 
-## Evidence record template
+## Test record template
 
 ```text
 Date (UTC):
@@ -59,8 +55,8 @@ Sanitized artifact path:
 Known limitation:
 ```
 
-Recommended filenames: `compose-smoke.json`, `minikube-smoke.json`, `synthetic-document.png`, `restart-persistence.md`, `restore-drill.md`, `resource-snapshot.md`, `image-scan-summary.md`. These are suggestions, not files claimed to exist.
+Use descriptive filenames such as `compose-smoke.json`, `minikube-smoke.json`, `restart-persistence.md`, `restore-drill.md`, and `resource-snapshot.md` for new test results.
 
-## Before committing evidence
+## Handling test artifacts
 
-Inspect every file manually. Remove credentials, tokens, secret YAML, environment dumps, state files, real document contents, private hostnames and personal account identifiers. Do not rely on automatic redaction alone. Keep raw backups/logs privately. Never fabricate screenshot content, uptime, users, performance gains, deployment counts or restore times.
+Review artifacts before committing. Remove credentials, tokens, secret YAML, environment dumps, state files, real document contents, private hostnames, and personal account identifiers. Keep raw backups and logs in private storage.

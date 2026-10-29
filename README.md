@@ -1,22 +1,23 @@
 # Paperless GCP DevOps Platform
 
-**A local-first operations portfolio for an existing open-source application.**
+Deployment and operations configuration for [Paperless-ngx](https://github.com/paperless-ngx/paperless-ngx), with Docker Compose, Minikube/Helm, and an optional Google Cloud Terraform blueprint.
 
-This repository packages [Paperless-ngx](https://github.com/paperless-ngx/paperless-ngx) with reproducible local infrastructure, a small Helm chart, credential-free cloud validation, and operations exercises. Its purpose is to make deployment engineering inspectable on GitHub without maintaining a paid Google Cloud environment.
+The local stack runs Paperless-ngx, PostgreSQL, and Valkey with pinned images, persistent storage, health checks, and resource limits for a Windows 11/WSL2 host. Cloud infrastructure is disabled by default; validation and mock tests run without cloud credentials or provisioned resources.
 
-**Paperless-ngx is developed by its upstream maintainers.** This project's contribution is the deployment configuration, automation, tests, architecture decisions, and runbooks. It does not claim to have built the document-management application. See [attribution and licenses](THIRD_PARTY_NOTICES.md).
+Paperless-ngx is an upstream dependency. This repository contains the deployment configuration, automation, tests, and operations documentation. See [attribution and licenses](THIRD_PARTY_NOTICES.md).
 
-## Start here
+## Documentation
 
-| Reader | Best starting point |
+| Task | Documentation |
 |---|---|
-| Recruiter: two-minute overview | Scope, architecture, and verification status below |
-| Engineer: reproduce the project | [Windows/WSL2 setup](docs/windows-wsl2.md), then [runbook](docs/runbook.md) |
-| Reviewer: examine actual checks | [Validation record](docs/evidence/VALIDATION.md) and [workflows](.github/workflows) |
-| Portfolio owner: build credible evidence | [Evidence checklist](docs/evidence/CHECKLIST.md), [demo script and resume](docs/portfolio.md) |
-| Cloud reviewer | [Terraform blueprint](terraform/README.md) and [design decisions](docs/decisions.md) |
+| Set up locally | [Windows/WSL2 setup](docs/windows-wsl2.md) |
+| Deploy, troubleshoot, and restore | [Runbook](docs/runbook.md) |
+| Understand the design | [Architecture](docs/architecture.md) and [decisions](docs/decisions.md) |
+| Run and review checks | [Validation record](docs/evidence/VALIDATION.md), [checklist](docs/evidence/CHECKLIST.md), and [workflows](.github/workflows) |
+| Inspect the cloud configuration | [Terraform blueprint](terraform/README.md) |
+| Review security findings | [Security model](SECURITY.md) and [image scan](docs/evidence/image-scan-summary.md) |
 
-## What this project demonstrates
+## Components
 
 - **Reproducibility:** the same three upstream image digests in Compose and Helm, tracked in [images.lock.json](images.lock.json).
 - **Operations:** health checks, persistent storage, restricted local access, resource budgets, failure diagnosis, and an export/restore drill.
@@ -24,13 +25,13 @@ This repository packages [Paperless-ngx](https://github.com/paperless-ngx/paperl
 - **Infrastructure as code:** reusable network, GKE, and Artifact Registry modules; private nodes, scoped node IAM, and an explicit deployment opt-in.
 - **Continuous validation:** schema validation, policy regression tests, mocked Terraform plans, workflow linting, committed-secret scanning, and image vulnerability/SBOM workflows.
 
-This is a single-node learning environment. It does not implement application high availability, production disaster recovery, internet exposure, or automated cloud delivery. GitHub Actions validates and runs disposable demos; it never applies the Google Cloud blueprint.
+This is a single-node lab. High availability, internet exposure, and automated cloud delivery are outside its scope. GitHub Actions is configured for validation, security scans, and disposable runtime tests; no workflow applies the Google Cloud blueprint.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    Reviewer[Reviewer] --> Repo[GitHub repository]
+    Changes[Source changes] --> Repo[GitHub repository]
     Repo --> CI[Validation and security checks]
     CI --> Evidence[Manifests, tests, scan reports]
     Browser[Local browser] --> Local[Loopback port 8000]
@@ -49,18 +50,17 @@ Compose binds only to `127.0.0.1`. Kubernetes exposes ClusterIP services, reache
 
 ## Verification status
 
-The checked-in [validation record](docs/evidence/VALIDATION.md) distinguishes actual command results from checks still to run. **No Google Cloud deployment is claimed. No GitHub workflow run is claimed before this repository is published and the workflow completes.** A passing schema or mock test is not proof of application runtime behavior.
+Local static checks and Terraform mock tests passed. Compose and Minikube runtime tests remain pending, and the Google Cloud blueprint has not been applied. Commands, tool versions, and results are recorded in the [validation record](docs/evidence/VALIDATION.md).
 
 The dated [image scan](docs/evidence/image-scan-summary.md) found HIGH/CRITICAL advisories in the upstream Paperless and PostgreSQL images. The image-security gate fails on those findings. Review them before using real documents or considering exposure beyond this synthetic local lab.
 
-| Capability | Delivery |
+| Component | Status |
 |---|---|
-| Compose setup | Config validated; runtime result recorded separately |
+| Compose setup | Configuration validated; startup and ingestion pending |
 | Minikube/Helm | Chart linted, rendered, schema and policy checked |
 | GCP Terraform | Provider-validated and tested with mocks; never applied to GCP |
-| GitHub Actions | Workflow definitions linted; visible run history begins after publication |
-| Vulnerability status | Scan workflow provided; consult dated results, never assume zero findings |
-| Resume claims | [Evidence-dependent wording](docs/portfolio.md) |
+| GitHub Actions | Definitions linted locally; first hosted validation run blocked before execution |
+| Image security | Scans completed; HIGH/CRITICAL findings remain in Paperless and PostgreSQL |
 
 ## Quick start: Compose
 
@@ -123,12 +123,14 @@ terraform/tests/              Credential-free mock tests
 .github/workflows/            Validation, security and manual runtime demos
 scripts/                      Initialization, validation and API smoke tools
 tests/                        Secret handling and deployment-policy regressions
-docs/                         Runbook, decisions, portfolio and evidence
+docs/                         Setup, runbook, architecture and validation records
 LICENSES/                     Referenced upstream license texts
 ```
 
-## Publish and present
+## Validation and maintenance
 
-Follow [the publishing guide](docs/publishing.md). Run the validation workflow and both manual runtime choices before claiming those environments work. Add only sanitized screenshots and real run links. The Terraform blueprint can remain permanently undeployed.
+Use the [validation checklist](docs/evidence/CHECKLIST.md) when changing workload settings or image digests. Run the static checks, then the Compose and Minikube runtime tests separately. Record the commit, environment, and results alongside sanitized test artifacts. The Terraform blueprint can remain undeployed.
+
+## License
 
 Original repository material is MIT licensed. Paperless-ngx remains GPL-3.0-only; its image is consumed unchanged from upstream. PostgreSQL and Valkey retain their own licenses. [Full attribution](THIRD_PARTY_NOTICES.md).

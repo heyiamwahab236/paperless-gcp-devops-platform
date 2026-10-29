@@ -1,6 +1,6 @@
 # Google Cloud deployment blueprint
 
-**Status: configuration validated and tested with a mock provider; never deployed to Google Cloud.** Leave `enable_deployment = false`. The portfolio requires no project, billing account, service-account key, or GCP credentials.
+**Status: configuration validated and tested with a mock provider; not deployed to Google Cloud.** With the default `enable_deployment = false`, local validation and mock tests require no project, billing account, service-account key, or GCP credentials.
 
 ## Module contracts
 
@@ -23,13 +23,13 @@ terraform -chdir=terraform validate
 terraform -chdir=terraform test
 ```
 
-`init` downloads the provider; it does not provision GCP. `validate` checks schemas. The test files declare a mock Google provider and include simulated plans/applies, default-off checks, input rejection, node/IAM/network checks, and composed outputs. A mock apply is not a cloud deployment. Neither a real `plan` nor `apply` is included in CI. A real plan can require credentials/API access even with refresh disabled; do not present it as an offline check.
+`init` downloads the provider; it does not provision GCP. `validate` checks schemas. The test files declare a mock Google provider and include simulated plans/applies, default-off checks, input rejection, node/IAM/network checks, and composed outputs. Neither a real `plan` nor `apply` is included in CI. A real plan can require credentials/API access even with refresh disabled.
 
 The root lock file includes hashes for Linux and Windows AMD64. When changing providers, use a reviewed upgrade and regenerate locks with `terraform providers lock -platform=linux_amd64 -platform=windows_amd64`, then rerun the tests.
 
-## Future deployment handoff — outside the normal portfolio workflow
+## Optional cloud deployment
 
-This is the sequence a future operator would use after independently choosing to incur cloud charges. It was not executed for this project.
+The following procedure provisions billable infrastructure and has not been executed. It is optional; local operation and validation do not depend on it.
 
 1. Select an existing dedicated sandbox project with billing, quotas, a budget alert, and an authorized human identity. A budget alert is not a spending cap. Use Application Default Credentials from a short-lived human login or a scoped federated identity; do not create/download a service-account JSON key for Actions.
 2. Review APIs and IAM permissions for the deploying identity. It needs permission to enable the listed project services, manage this VPC/NAT, create GKE resources, create the node service account and role grants, and manage the registry and its IAM. Org-policy restrictions may require additional review; do not default to granting project Owner. The runtime node role is separate from deployer permissions.
@@ -39,7 +39,7 @@ This is the sequence a future operator would use after independently choosing to
 6. Generate local secrets privately and use `python3 scripts/kube_secret.py --context ACTUAL_GKE_CONTEXT`. Deploy the chart with `helm upgrade --install demo helm/paperless --kube-context ACTUAL_GKE_CONTEXT -n paperless -f helm/values-gke.yaml --wait --timeout 15m`. The chart's `standard-rwo` disks, local-only URL and port-forward access are intended for a restricted sandbox. Create an admin and repeat smoke/persistence/restore exercises. No managed database, TLS ingress or internet-facing demo is supplied.
 7. The registry is optional mirror infrastructure. It is empty; upstream image pulls work through NAT without it. Publishing a mirror is a separate process with source/license and provenance review. Workload Identity is enabled at cluster/node level, but the app gets no IAM binding or cloud permissions.
 
-The resources are a deployment-ready **sandbox blueprint**, not a production platform or a claim that deployment will succeed without project-specific review. Google-managed API behavior, quotas, policy, network reachability and IAM propagation cannot be validated by mocks.
+This blueprint targets a restricted sandbox. Google-managed API behavior, quotas, policy, network reachability, and IAM propagation require live verification and cannot be validated by mocks.
 
 ## Cost and teardown design
 
