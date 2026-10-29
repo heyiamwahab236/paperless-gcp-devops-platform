@@ -1,0 +1,77 @@
+name: Validate
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
+        with:
+          version: v3.19.0
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.13.5
+          terraform_wrapper: false
+      - name: Install validation dependencies
+        run: |
+          python -m pip install -r requirements-dev.txt
+          python scripts/install_ci_tools.py actionlint kubeconform
+          echo "$PWD/build/tools" >> "$GITHUB_PATH"
+      - name: Validate workflow definitions
+        run: actionlint -shellcheck="" .github/workflows/*.yml
+      - name: Validate without starting containers or contacting GCP
+        run: python scripts/validate.py
+      - name: Store rendered manifests (no secrets)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rendered-manifests
+          path: |
+            build/local.yaml
+            build/gke.yaml
+          retention-days: 7
+  security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install verified scanner
+        run: python3 scripts/install_ci_tools.py trivy
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
+        with:
+          version: v3.19.0
+      - name: Block committed secrets
+        run: build/tools/trivy fs --scanners secret --exit-code 1 --skip-dirs build,.git --no-progress .
+      - name: Audit infrastructure configuration
+        # Report-only: local lab exceptions and future cloud hardening are documented.
+        run: |
+          helm template demo helm/paperless --namespace paperless > build/security-manifest.yaml
+          build/tools/trivy config --exit-code 0 --severity HIGH,CRITICAL --format json --output build/kubernetes-security.json build/security-manifest.yaml
+          build/tools/trivy config --exit-code 0 --severity HIGH,CRITICAL --format json --output build/terraform-security.json --tf-vars terraform/audit.tfvars.example terraform/modules
+          python3 scripts/check_scan_coverage.py build/kubernetes-security.json build/terraform-security.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: infrastructure-security-audit
+          path: |
+            build/kubernetes-security.json
+            build/terraform-security.json
+          retention-days: 7

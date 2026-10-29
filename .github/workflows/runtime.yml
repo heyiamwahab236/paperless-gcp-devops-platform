@@ -1,0 +1,78 @@
+name: Runtime demo
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Run one environment at a time
+        type: choice
+        options: [compose, minikube]
+        default: compose
+permissions:
+  contents: read
+concurrency:
+  group: runtime-demo
+  cancel-in-progress: false
+jobs:
+  demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PAPERLESS_TEST_USER: portfolio-ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Prepare disposable credentials
+        run: |
+          python3 scripts/init_local.py
+          password=$(openssl rand -hex 32)
+          echo "::add-mask::$password"
+          echo "PAPERLESS_TEST_PASSWORD=$password" >> "$GITHUB_ENV"
+          mkdir -p build
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
+        if: inputs.target == 'minikube'
+        with:
+          version: v3.19.0
+      - uses: medyagh/setup-minikube@e9e035a86bbc3caea26a450bd4dbf9d0c453682e # latest, pinned
+        if: inputs.target == 'minikube'
+        with:
+          minikube-version: 1.39.0
+          kubernetes-version: v1.35.0
+          driver: docker
+          memory: 3072
+          cpus: 2
+          start-args: --profile=paperless-lab
+          cache: false
+      - name: Start Compose and create ephemeral admin
+        if: inputs.target == 'compose'
+        run: |
+          docker compose up -d --wait --wait-timeout 900
+          docker compose exec -T -e DJANGO_SUPERUSER_PASSWORD="$PAPERLESS_TEST_PASSWORD" webserver \
+            createsuperuser --noinput --username "$PAPERLESS_TEST_USER" --email demo@example.invalid
+      - name: Start Helm and create ephemeral admin
+        if: inputs.target == 'minikube'
+        run: |
+          python3 scripts/kube_secret.py
+          helm upgrade --install demo helm/paperless --kube-context paperless-lab --namespace paperless --wait --timeout 15m
+          kubectl --context paperless-lab -n paperless exec -i deployment/demo-paperless-app -- \
+            /command/with-contenv python3 manage.py shell -c "import sys; from django.contrib.auth import get_user_model; get_user_model().objects.create_superuser('portfolio-ci', 'demo@example.invalid', sys.stdin.read().strip())" <<< "$PAPERLESS_TEST_PASSWORD"
+          kubectl --context paperless-lab -n paperless port-forward --address=127.0.0.1 service/demo-paperless-app 8000:8000 > build/port-forward.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsSL http://localhost:8000/accounts/login/ > /dev/null; then break; fi
+            sleep 2
+          done
+      - name: Verify ingestion, search and original-file integrity
+        run: python3 scripts/smoke.py > build/smoke-result.json
+      - name: Retain synthetic smoke evidence only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: runtime-${{ inputs.target }}
+          path: build/smoke-result.json
+          retention-days: 7
+      - name: Remove disposable Compose resources
+        if: always() && inputs.target == 'compose'
+        run: docker compose down --volumes --remove-orphans
+      - name: Remove disposable Minikube
+        if: always() && inputs.target == 'minikube'
+        run: minikube delete --profile=paperless-lab
