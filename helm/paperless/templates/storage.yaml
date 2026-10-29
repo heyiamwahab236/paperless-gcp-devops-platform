@@ -1,0 +1,19 @@
+{{- range $component, $size := .Values.storage }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "paperless.name" $ }}-{{ $component }}
+  annotations:
+    helm.sh/resource-policy: keep
+  labels:
+    {{- include "paperless.labels" $ | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- if $.Values.storageClass }}
+  storageClassName: {{ $.Values.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $size }}
+{{- end }}

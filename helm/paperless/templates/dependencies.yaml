@@ -1,0 +1,82 @@
+{{- range $component := list "postgres" "broker" }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "paperless.name" $ }}-{{ $component }}
+  labels:
+    {{- include "paperless.labels" $ | nindent 4 }}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+      app.kubernetes.io/component: {{ $component }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: {{ $component }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: {{ $component }}
+          image: {{ index $.Values.images $component | quote }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            {{- toYaml (index $.Values.resources $component) | nindent 12 }}
+          {{- if eq $component "postgres" }}
+          ports: [{name: service, containerPort: 5432}]
+          env:
+            - {name: POSTGRES_DB, value: paperless}
+            - {name: POSTGRES_USER, value: paperless}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: {{ $.Values.existingSecret | quote }}, key: db-password}
+          startupProbe:
+            exec: {command: [pg_isready, -U, paperless, -d, paperless]}
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec: {command: [pg_isready, -U, paperless, -d, paperless]}
+          livenessProbe:
+            tcpSocket: {port: service}
+            periodSeconds: 30
+          volumeMounts:
+            - {name: storage, mountPath: /var/lib/postgresql}
+            - {name: tmp, mountPath: /tmp}
+            - {name: socket, mountPath: /var/run/postgresql}
+          {{- else }}
+          command: [valkey-server, --appendonly, 'yes', --maxmemory, 64mb, --maxmemory-policy, noeviction]
+          ports: [{name: service, containerPort: 6379}]
+          startupProbe:
+            exec: {command: [valkey-cli, ping]}
+            failureThreshold: 30
+          readinessProbe:
+            exec: {command: [valkey-cli, ping]}
+          livenessProbe:
+            exec: {command: [valkey-cli, ping]}
+            periodSeconds: 30
+          volumeMounts:
+            - {name: storage, mountPath: /data}
+          {{- end }}
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ include "paperless.name" $ }}-{{ $component }}
+        {{- if eq $component "postgres" }}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: socket, emptyDir: {sizeLimit: 16Mi}}
+        {{- end }}
+{{- end }}

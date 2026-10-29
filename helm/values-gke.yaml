@@ -1,0 +1,6 @@
+# Future, billable sandbox only. Same single-replica lab; not highly available.
+storageClass: standard-rwo
+storage:
+  app: 10Gi
+  postgres: 10Gi
+  broker: 1Gi

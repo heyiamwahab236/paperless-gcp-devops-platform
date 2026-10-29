@@ -1,0 +1,10 @@
+# Synthetic inputs for static Trivy evaluation of independent modules.
+# This is not a deployment tfvars file and contains no credentials.
+project_id         = "portfolio-test-project"
+name               = "paperless-lab"
+region             = "europe-west3"
+zone               = "europe-west3-a"
+network_id         = "projects/portfolio-test-project/global/networks/paperless-lab"
+subnet_id          = "projects/portfolio-test-project/regions/europe-west3/subnetworks/paperless-lab"
+admin_cidr         = "203.0.113.10/32"
+node_service_email = "paperless-node@portfolio-test-project.iam.gserviceaccount.com"

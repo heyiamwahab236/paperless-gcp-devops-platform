@@ -1,0 +1,26 @@
+# Runtime credentials and document data
+.env
+.env.*
+!.env.example
+.secrets/
+runtime/
+backups/
+*.pem
+*.key
+*credentials*.json
+# Terraform: commit dependency locks, never state or saved plans
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+crash.log
+# Local validation
+.venv/
+__pycache__/
+*.pyc
+.cache/
+build/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,18 @@
+{{- range $component, $port := dict "app" 8000 "postgres" 5432 "broker" 6379 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "paperless.name" $ }}-{{ $component }}
+  labels:
+    {{- include "paperless.labels" $ | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: {{ $component }}
+  ports:
+    - name: service
+      port: {{ $port }}
+      targetPort: service
+{{- end }}

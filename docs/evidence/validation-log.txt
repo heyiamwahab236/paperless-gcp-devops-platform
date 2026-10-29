@@ -1,0 +1,73 @@
+$ python scripts/validate.py
++ docker compose config --quiet
++ helm lint helm/paperless --strict
+==> Linting helm/paperless
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
++ helm template demo helm/paperless --namespace paperless
++ python scripts/check_manifests.py $REPO\build\local.yaml
+PASS: workload, storage, secrets, resource, service, and security policies
++ $WORKSPACE\work\tools\kubeconform.EXE -strict -summary -kubernetes-version 1.35.0 $REPO\build\local.yaml
+Summary: 9 resources found in 1 file - Valid: 9, Invalid: 0, Errors: 0, Skipped: 0
++ helm template demo helm/paperless --namespace paperless -f helm/values-gke.yaml
++ python scripts/check_manifests.py $REPO\build\gke.yaml
+PASS: workload, storage, secrets, resource, service, and security policies
++ $WORKSPACE\work\tools\kubeconform.EXE -strict -summary -kubernetes-version 1.35.0 $REPO\build\gke.yaml
+Summary: 9 resources found in 1 file - Valid: 9, Invalid: 0, Errors: 0, Skipped: 0
++ python -m unittest discover -s tests -v
+test_bad_existing_secret_is_not_replaced (test_local_tools.LocalToolsTests.test_bad_existing_secret_is_not_replaced) ... ok
+test_locked_images_match_both_runtimes (test_local_tools.LocalToolsTests.test_locked_images_match_both_runtimes) ... ok
+test_pdf_cross_reference_offsets (test_local_tools.LocalToolsTests.test_pdf_cross_reference_offsets) ... ok
+test_secrets_are_unique_and_preserved (test_local_tools.LocalToolsTests.test_secrets_are_unique_and_preserved) ... ok
+test_multiple_writers_rejected (test_policies.ManifestPolicyTests.test_multiple_writers_rejected) ... ok
+test_plaintext_secret_rejected (test_policies.ManifestPolicyTests.test_plaintext_secret_rejected) ... ok
+test_public_service_rejected (test_policies.ManifestPolicyTests.test_public_service_rejected) ... ok
+test_selector_typo_rejected (test_policies.ManifestPolicyTests.test_selector_typo_rejected) ... ok
+test_valid_chart (test_policies.ManifestPolicyTests.test_valid_chart) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.582s
+
+OK
++ python scripts/check_docs.py
+PASS: local links in 15 Markdown files
++ terraform -chdir=terraform fmt -check -recursive
++ terraform -chdir=terraform init -backend=false -input=false -lockfile=readonly
+Initializing modules...
+Initializing provider plugins...
+- terraform.io/builtin/terraform is built in to Terraform
+- Reusing previous version of hashicorp/google from the dependency lock file
+- Using previously-installed hashicorp/google v7.46.2
+
+Terraform has been successfully initialized!
++ terraform -chdir=terraform validate -no-color
+Success! The configuration is valid.
+
++ terraform -chdir=terraform test -no-color
+tests\blueprint.tftest.hcl... in progress
+  run "disabled_by_default"... pass
+  run "reject_public_control_plane"... pass
+  run "require_deployment_inputs"... pass
+  run "enabled_blueprint_mock"... pass
+tests\blueprint.tftest.hcl... tearing down
+tests\blueprint.tftest.hcl... pass
+tests\gke.tftest.hcl... in progress
+  run "private_single_zone_nodes"... pass
+tests\gke.tftest.hcl... tearing down
+tests\gke.tftest.hcl... pass
+
+Success! 5 passed, 0 failed.
+PASS: non-deploying validation. Runtime and cloud deployment are not proven by these checks.
+
+Exit code: 0
+
+$ $WORKSPACE\work\tools\actionlint.exe -shellcheck= -oneline $REPO\.github\workflows\images.yml $REPO\.github\workflows\runtime.yml $REPO\.github\workflows\validate.yml
+
+Exit code: 0
+
+Follow-up after checking setup-minikube download URL construction:
+$ actionlint -shellcheck= -oneline .github/workflows/runtime.yml
+Exit code: 0
+
+PASS: Bash syntax in 14 workflow run steps (Git Bash -n; commands not executed).

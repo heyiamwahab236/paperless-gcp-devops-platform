@@ -1,0 +1,7 @@
+# Example only; no credentials. Leave deployment disabled.
+enable_deployment   = false
+project_id          = "paperless-blueprint-demo"
+region              = "europe-west3"
+zone                = "europe-west3-a"
+admin_cidr          = ""
+deletion_protection = true

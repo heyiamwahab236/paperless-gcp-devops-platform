@@ -1,0 +1,9 @@
+The chart runs the upstream Paperless-ngx image. It does not create credentials.
+
+Create an admin:
+  kubectl -n {{ .Release.Namespace }} exec -it deployment/{{ include "paperless.name" . }}-app -- createsuperuser
+
+Open a local tunnel:
+  kubectl -n {{ .Release.Namespace }} port-forward --address=127.0.0.1 service/{{ include "paperless.name" . }}-app 8000:8000
+
+Visit {{ .Values.url }}. PVCs are retained by Helm uninstall; node deletion may still destroy local data.

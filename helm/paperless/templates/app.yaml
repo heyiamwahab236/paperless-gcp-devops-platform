@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "paperless.name" . }}-app
+  labels:
+    {{- include "paperless.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  # RWO storage and bundled background workers require a single writer.
+  strategy: {type: Recreate}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: app
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: app
+          image: {{ .Values.images.app | quote }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          ports: [{name: service, containerPort: 8000}]
+          resources:
+            {{- toYaml .Values.resources.app | nindent 12 }}
+          env:
+            - {name: PAPERLESS_DBENGINE, value: postgresql}
+            - {name: PAPERLESS_DBNAME, value: paperless}
+            - {name: PAPERLESS_DBUSER, value: paperless}
+            - name: PAPERLESS_DBHOST
+              value: {{ include "paperless.name" . }}-postgres
+            - name: PAPERLESS_DBPASS
+              valueFrom:
+                secretKeyRef: {name: {{ .Values.existingSecret | quote }}, key: db-password}
+            - name: PAPERLESS_SECRET_KEY
+              valueFrom:
+                secretKeyRef: {name: {{ .Values.existingSecret | quote }}, key: secret-key}
+            - name: PAPERLESS_REDIS
+              value: redis://{{ include "paperless.name" . }}-broker:6379
+            - {name: PAPERLESS_URL, value: {{ .Values.url | quote }}}
+            - {name: PAPERLESS_TIME_ZONE, value: {{ .Values.timeZone | quote }}}
+            - {name: PAPERLESS_OCR_LANGUAGE, value: eng}
+            - {name: PAPERLESS_OCR_MODE, value: auto}
+            - {name: PAPERLESS_OCR_CLEAN, value: none}
+            - {name: PAPERLESS_TASK_WORKERS, value: '1'}
+            - {name: PAPERLESS_THREADS_PER_WORKER, value: '1'}
+            - {name: PAPERLESS_WEBSERVER_WORKERS, value: '1'}
+            - {name: PAPERLESS_DATA_DIR, value: /storage/data}
+            - {name: PAPERLESS_MEDIA_ROOT, value: /storage/media}
+            - {name: PAPERLESS_CONSUMPTION_DIR, value: /storage/consume}
+          volumeMounts:
+            - {name: storage, mountPath: /storage}
+          startupProbe:
+            httpGet: {path: /accounts/login/, port: service}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 90
+          readinessProbe:
+            httpGet: {path: /accounts/login/, port: service}
+            periodSeconds: 10
+            timeoutSeconds: 5
+          # TCP liveness avoids restart loops during a temporary DB outage.
+          livenessProbe:
+            tcpSocket: {port: service}
+            periodSeconds: 30
+            failureThreshold: 5
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ include "paperless.name" . }}-app
