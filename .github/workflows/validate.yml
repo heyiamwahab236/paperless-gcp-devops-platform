@@ -39,7 +39,7 @@ jobs:
         run: python scripts/validate.py
       - name: Store rendered manifests (no secrets)
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: rendered-manifests
           path: |
@@ -67,7 +67,7 @@ jobs:
           build/tools/trivy config --exit-code 0 --severity HIGH,CRITICAL --format json --output build/kubernetes-security.json build/security-manifest.yaml
           build/tools/trivy config --exit-code 0 --severity HIGH,CRITICAL --format json --output build/terraform-security.json --tf-vars terraform/audit.tfvars.example terraform/modules
           python3 scripts/check_scan_coverage.py build/kubernetes-security.json build/terraform-security.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: infrastructure-security-audit
